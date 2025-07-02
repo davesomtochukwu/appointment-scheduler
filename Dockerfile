@@ -1,4 +1,3 @@
-# Use official Node.js image as the base
 FROM node:18-alpine AS builder
 
 WORKDIR /app
@@ -23,24 +22,17 @@ FROM node:18-alpine AS runner
 
 WORKDIR /app
 
-# Install pnpm for running the app
-RUN npm install -g pnpm
-
-# Copy only the necessary files from the builder
-COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/pnpm-lock.yaml ./pnpm-lock.yaml
-
-# Install only production dependencies
-RUN pnpm install --prod --frozen-lockfile --strict-peer-dependencies=false
-
-# Copy Next.js standalone output
+# Copy standalone output and required files
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
 
-# Copy environment variables file if needed
+# Optionally copy .env or other config files
 # COPY .env.local .env.local
 
 EXPOSE 3000
+
+# Limit Node.js memory usage for low-resource environments
+ENV NODE_OPTIONS="--max-old-space-size=192"
 
 CMD ["node", "server.js"]
